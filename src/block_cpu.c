@@ -1,4 +1,4 @@
-#include "block_cpu.h"
+#include "blocks.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -24,7 +24,7 @@ static bool block_cpu_init(void **opaque) {
     data->f_stat = fopen(PROC_STAT_FN, "r");
 
     if (data->f_stat == NULL) {
-        fprintf(stderr, "fopen('%s') failed: %s", PROC_STAT_FN, strerror(errno));
+        fprintf(stderr, "failed to open '%s': %s", PROC_STAT_FN, strerror(errno));
         return false;
     }
 

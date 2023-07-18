@@ -1,17 +1,15 @@
-#include "bar.h"
-
 #include <unistd.h>
 #include <stdbool.h>
 
-#include "block_time.h"
-#include "block_cpu.h"
-#include "block_memory.h"
+#include "bar.h"
+#include "blocks.h"
 
 int main() {
     bar_t bar;
 
     bar_init(&bar);
 
+    bar_add(&bar, block_battery);
     bar_add(&bar, block_memory);
     bar_add(&bar, block_cpu);
     bar_add(&bar, block_time);

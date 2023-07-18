@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "block_time.h"
-
 static bool update_block(block_t *block) {
     return block->funcs.update(block->opaque);
 }
