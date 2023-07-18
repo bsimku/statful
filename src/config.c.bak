@@ -1,0 +1,81 @@
+#include "config.h"
+
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
+#define MAX_TOKEN_LENGTH 32
+
+static bool str_to_bool(const char *value) {
+    if (strcmp(value, "true") == 0)
+        return true;
+
+    return false;
+}
+
+#define GET_BOOL(conf) (strcmp(key, conf) == 0 && str_to_bool(value))
+#define MAP_BOOL(conf, val) (if (strcmp(key, conf) == 0) val = str_to_bool(value))
+#define ADD_BLOCK(conf, block) (if (strcmp(key, "bars." #conf "enabled") == 0 && str_to_bool(value)) add_block(config, block))
+
+static void add_block(config_t *config, block_type_e block) {
+    if (config->num_blocks == MAX_BLOCKS) // TODO: error
+        return;
+
+    config->blocks[config->num_blocks++] = block;
+}
+
+static void parse_option(const char *key, const char *value, config_t *config) {
+    ADD_BLOCK(time, BLOCK_TIME);
+
+    if (GET_BOOL("bars.time.enabled")) {
+    }
+
+    //if (strcmp(key, "bars.time.enabled") == 0
+}
+
+bool config_read(const char *filename, config_t *config) {
+    FILE *file = fopen(filename, "r");
+
+    if (file == NULL) {
+        fprintf(stderr, "failed to open '%s': %s\n", filename, strerror(errno));
+        return false;
+    }
+
+    char key[MAX_TOKEN_LENGTH], value[MAX_TOKEN_LENGTH];
+    char ch;
+
+    enum {
+        KEY,
+        VALUE
+    } parse_state = KEY;
+
+    unsigned int key_len = 0, value_len = 0;
+
+    while ((ch = fgetc(file) != EOF)) {
+        switch (ch) {
+            default:
+                if (parse_state == KEY && key_len <= MAX_TOKEN_LENGTH) {
+                    key[key_len++] = ch;
+                }
+                else if (parse_state == VALUE && value_len <= MAX_TOKEN_LENGTH) {
+                    value[value_len++] = ch;
+                }
+
+                break;
+            case ' ':
+                continue;
+            case '\n':
+                parse_state = KEY;
+
+                if (key_len == 0 || value_len == 0)
+                    continue;
+
+                break;
+            case '=':
+                parse_state = VALUE;
+                break;
+        }
+    }
+
+    return true;
+}

@@ -1,0 +1,18 @@
+#ifndef BLOCK_H
+#define BLOCK_H
+
+#include <stdbool.h>
+
+struct block {
+    const char *name;
+    bool (*probe)();
+    bool (*init)(void **);
+    bool (*update)(void *);
+};
+
+typedef struct {
+    struct block funcs;
+    void *opaque;
+} block_t;
+
+#endif
