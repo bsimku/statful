@@ -47,8 +47,6 @@ static bool read_file(const char *fn, char buf[MAX_FILE_SIZE]) {
 static bool is_battery(const char *power_supply) {
     char *type_fn = make_path(PROC_POWER_SUPPLIES_DIR, power_supply, "type");
 
-    fprintf(stderr, "type_fn = '%s'\n", type_fn);
-
     char contents[MAX_FILE_SIZE];
 
     if (!read_file(type_fn, contents)) {
@@ -122,7 +120,7 @@ static bool block_battery_init(void **ptr) {
     return true;
 }
 
-static int block_battery_get_capacity(const char *capacity_fn) {
+static int get_battery_capacity(const char *capacity_fn) {
     char contents[MAX_FILE_SIZE];
 
     if (!read_file(capacity_fn, contents))
@@ -138,7 +136,7 @@ enum battery_status {
     FULL
 };
 
-static enum battery_status block_battery_get_status(const char *status_fn) {
+static enum battery_status get_battery_status(const char *status_fn) {
     char contents[MAX_FILE_SIZE];
 
     if (!read_file(status_fn, contents))
@@ -148,12 +146,27 @@ static enum battery_status block_battery_get_status(const char *status_fn) {
         return CHARGING;
 
     if (strcmp(contents, "Discharging") == 0)
-        return CHARGING;
+        return DISCHARGING;
 
     if (strcmp(contents, "Full") == 0)
         return FULL;
 
     return UNKNOWN;
+}
+
+static const char *get_status_symbol(const enum battery_status status, const int capacity) {
+    if (status == CHARGING)
+        return "";
+    else if (capacity < 20)
+        return "";
+    else if (capacity < 40)
+        return "";
+    else if (capacity < 60)
+        return "";
+    else if (capacity < 80)
+        return "";
+
+    return "";
 }
 
 static bool block_battery_update(void *ptr) {
@@ -162,10 +175,17 @@ static bool block_battery_update(void *ptr) {
     if (data == NULL)
         return false;
 
-    const enum battery_status status = block_battery_get_status(data->status_path);
-    const int capacity = block_battery_get_capacity(data->capacity_path);
+    const enum battery_status status = get_battery_status(data->status_path);
 
-    printf("%u%%", capacity);
+    if (status == UNKNOWN)
+        return false;
+
+    const int capacity = get_battery_capacity(data->capacity_path);
+
+    if (capacity == -1)
+        return false;
+
+    printf("%s %u%%", get_status_symbol(status, capacity), capacity);
 
     return true;
 }

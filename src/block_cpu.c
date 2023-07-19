@@ -63,7 +63,7 @@ static bool block_cpu_update(void *opaque) {
 
     const unsigned int percent_used = active_diff * 100 / total_diff;
 
-    printf("%u%%", percent_used);
+    printf(" %u%%", percent_used);
 
     return true;
 }

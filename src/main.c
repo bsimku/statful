@@ -1,10 +1,13 @@
 #include <unistd.h>
 #include <stdbool.h>
+#include <locale.h>
 
 #include "bar.h"
 #include "blocks.h"
 
 int main() {
+    setlocale(LC_ALL, "en_US.UTF-8");
+
     bar_t bar;
 
     bar_init(&bar);

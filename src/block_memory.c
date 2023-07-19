@@ -37,7 +37,7 @@ static bool block_memory_update(void *unused) {
     const float used = (float)(mem_total - mem_free) / GBYTE;
     const float total = (float)mem_total / GBYTE;
 
-    printf("%.1f/%.1f GB", used, total);
+    printf(" %.1f/%.1f GB", used, total);
 
     return true;
 }

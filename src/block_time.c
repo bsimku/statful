@@ -20,9 +20,9 @@ static bool block_time_update(void *unused) {
         return false;
     }
 
-    printf("%d-%02d-%02d %02d:%02d:%02d", curr_time->tm_year + 1900, curr_time->tm_mon + 1,
-                                          curr_time->tm_mday, curr_time->tm_hour,
-                                          curr_time->tm_min, curr_time->tm_sec);
+    printf(" %d-%02d-%02d %02d:%02d:%02d", curr_time->tm_year + 1900, curr_time->tm_mon + 1,
+                                            curr_time->tm_mday, curr_time->tm_hour,
+                                            curr_time->tm_min, curr_time->tm_sec);
 
     return true;
 }
