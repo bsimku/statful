@@ -46,5 +46,6 @@ const struct block block_memory = {
     .name = "memory",
     .probe = NULL,
     .init = NULL,
-    .update = block_memory_update
+    .update = block_memory_update,
+    .close = NULL
 };
