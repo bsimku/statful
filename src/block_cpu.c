@@ -34,7 +34,7 @@ static bool block_cpu_init(void **opaque) {
 }
 
 static bool block_cpu_update(void *opaque) {
-    struct block_cpu_data *data = (struct block_cpu_data *)opaque;
+    struct block_cpu_data *data = opaque;
 
     if (data == NULL)
         return false;
@@ -68,9 +68,26 @@ static bool block_cpu_update(void *opaque) {
     return true;
 }
 
+static bool block_cpu_close(void *opaque) {
+    struct block_cpu_data *data = opaque;
+
+    if (data == NULL)
+        return false;
+
+    if (fclose(data->f_stat) == EOF) {
+        fprintf(stderr, "fclose() failed: %s\n", strerror(errno));
+        return false;
+    }
+
+    free(data);
+
+    return true;
+}
+
 const struct block block_cpu = {
     .name = "cpu",
     .probe = NULL,
     .init = block_cpu_init,
-    .update = block_cpu_update
+    .update = block_cpu_update,
+    .close = block_cpu_close
 };
