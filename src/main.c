@@ -22,6 +22,7 @@ int main() {
     bar_init(&bar);
 
     bar_add(&bar, block_battery);
+    bar_add(&bar, block_volume);
     bar_add(&bar, block_memory);
     bar_add(&bar, block_cpu);
     bar_add(&bar, block_time);
