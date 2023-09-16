@@ -34,6 +34,8 @@ static bool read_file(const char *fn, char buf[MAX_FILE_SIZE]) {
 
     size_t size = fread(buf, 1, MAX_FILE_SIZE, file);
 
+    fclose(file);
+
     if (size <= 1) {
         fprintf(stderr, "failed to read '%s': %s", fn, strerror(errno));
         return false;
