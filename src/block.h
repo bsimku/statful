@@ -7,6 +7,7 @@ struct block {
     const char *name;
     bool (*probe)();
     bool (*init)(void **);
+    bool (*close)(void *);
     bool (*update)(void *);
 };
 
