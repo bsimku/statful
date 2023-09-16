@@ -10,13 +10,6 @@
 #define JITTER_TIME_USECS     50000
 #define NSECS_IN_USEC         1000
 
-static useconds_t get_clock_time() {
-    struct timespec cur_time;
-    clock_gettime(CLOCK_MONOTONIC, &cur_time);
-
-    return cur_time.tv_nsec;
-}
-
 static bool update_block(block_t *block) {
     return block->funcs.update(block->opaque);
 }
@@ -35,7 +28,6 @@ static bool init_block(block_t *block) {
 
 void bar_init(bar_t *bar) {
     bar->num_blocks = 0;
-    bar->last_update = 0;
 }
 
 // TODO: make struct block a pointer
@@ -58,8 +50,6 @@ void bar_add(bar_t *bar, const struct block block) {
 }
 
 void bar_update(bar_t *bar) {
-    bar->last_update = get_clock_time();
-
     for (size_t i = 0; i < bar->num_blocks; i++) {
         if (!update_block(&bar->blocks[i]))
             continue;

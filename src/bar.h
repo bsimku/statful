@@ -10,7 +10,6 @@
 typedef struct {
     block_t blocks[MAX_BLOCKS];
     size_t num_blocks;
-    long last_update;
 } bar_t;
 
 void bar_init(bar_t *bar);
