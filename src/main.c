@@ -1,12 +1,21 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <locale.h>
+#include <signal.h>
 
 #include "bar.h"
 #include "blocks.h"
 
+void trap(int unused) {}
+
 int main() {
     setlocale(LC_ALL, "en_US.UTF-8");
+
+    const struct sigaction act = {
+        .sa_handler = trap
+    };
+
+    sigaction(SIGUSR1, &act, NULL);
 
     bar_t bar;
 
