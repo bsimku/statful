@@ -5,7 +5,7 @@
 
 #include "block.h"
 
-#define MAX_BLOCKS 4
+#define MAX_BLOCKS 5
 
 typedef struct {
     block_t blocks[MAX_BLOCKS];

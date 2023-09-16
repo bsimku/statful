@@ -14,6 +14,19 @@ static bool update_block(block_t *block) {
     return block->funcs.update(block->opaque);
 }
 
+static bool reinit_block(block_t *block) {
+    if (block->funcs.close && !block->funcs.close(block->opaque))
+        return false;
+
+    if (block->funcs.probe && !block->funcs.probe())
+        return false;
+
+    if (!block->funcs.init)
+        return true;
+
+    return block->funcs.init(&block->opaque);
+}
+
 static bool init_block(block_t *block) {
     if (!block->funcs.init)
         return true;
@@ -51,8 +64,15 @@ void bar_add(bar_t *bar, const struct block block) {
 
 void bar_update(bar_t *bar) {
     for (size_t i = 0; i < bar->num_blocks; i++) {
-        if (!update_block(&bar->blocks[i]))
+        block_t *block = &bar->blocks[i];
+
+        if (!update_block(block)) {
+            if (!reinit_block(block)) {
+                fprintf(stderr, "failed to reinit block!\n");
+            }
+
             continue;
+        }
 
         if (i + 1 < bar->num_blocks) {
             printf(" | ");
