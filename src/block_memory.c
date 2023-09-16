@@ -18,23 +18,23 @@ static bool block_memory_update(void *unused) {
     char ident[32];
     unsigned int kbytes;
 
-    unsigned int mem_total = 0, mem_free = 0;
+    unsigned int mem_total = 0, mem_available = 0;
 
     while (fscanf(f_meminfo, "%31[^:]: %u kB\n", ident, &kbytes) != EOF) {
         if (strcmp(ident, "MemTotal") == 0) {
             mem_total = kbytes;
         }
-        else if (strcmp(ident, "MemFree") == 0) {
-            mem_free = kbytes;
+        else if (strcmp(ident, "MemAvailable") == 0) {
+            mem_available = kbytes;
         }
 
-        if (mem_total && mem_free)
+        if (mem_total && mem_available)
             break;
     }
 
     fclose(f_meminfo);
 
-    const float used = (float)(mem_total - mem_free) / GBYTE;
+    const float used = (float)(mem_total - mem_available) / GBYTE;
     const float total = (float)mem_total / GBYTE;
 
     printf(" %.1f/%.1f GB", used, total);
