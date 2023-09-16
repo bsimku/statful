@@ -133,6 +133,7 @@ static int get_battery_capacity(const char *capacity_fn) {
 
 enum battery_status {
     UNKNOWN,
+    NOT_CHARGING,
     CHARGING,
     DISCHARGING,
     FULL
@@ -143,6 +144,9 @@ static enum battery_status get_battery_status(const char *status_fn) {
 
     if (!read_file(status_fn, contents))
         return -1;
+
+    if (strcmp(contents, "Not charging") == 0)
+        return NOT_CHARGING;
 
     if (strcmp(contents, "Charging") == 0)
         return CHARGING;
