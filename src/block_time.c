@@ -31,5 +31,6 @@ const struct block block_time = {
     .name = "time",
     .probe = NULL,
     .init = NULL,
-    .update = block_time_update
+    .update = block_time_update,
+    .close = NULL
 };
