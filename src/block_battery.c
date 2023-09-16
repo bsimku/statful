@@ -176,7 +176,7 @@ static const char *get_status_symbol(const enum battery_status status, const int
 }
 
 static bool block_battery_update(void *ptr) {
-    const struct block_battery_data *data = (const struct block_battery_data *)ptr;
+    const struct block_battery_data *data = ptr;
 
     if (data == NULL)
         return false;
@@ -196,9 +196,27 @@ static bool block_battery_update(void *ptr) {
     return true;
 }
 
+static bool block_battery_close(void *ptr) {
+    struct block_battery_data *data = ptr;
+
+    if (data == NULL)
+        return false;
+
+    if (data->capacity_path)
+        free(data->capacity_path);
+
+    if (data->status_path)
+        free(data->status_path);
+
+    free(data);
+
+    return true;
+}
+
 const struct block block_battery = {
     .name = "battery",
     .probe = block_battery_probe,
     .init = block_battery_init,
-    .update = block_battery_update
+    .update = block_battery_update,
+    .close = block_battery_close
 };
