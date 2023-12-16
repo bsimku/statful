@@ -13,6 +13,7 @@ typedef struct {
     block_type_e blocks[MAX_BLOCKS];
 } config_t;
 
-bool config_read(const char *filename, config_t *config);
+char *config_get_path();
+char *config_get_block_path(const char *name);
 
 #endif

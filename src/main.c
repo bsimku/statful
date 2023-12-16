@@ -1,12 +1,82 @@
+#include <string.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdbool.h>
 #include <locale.h>
 #include <signal.h>
 
+#include <luajit.h>
+#include <lualib.h>
+#include <lauxlib.h>
+
+#include "config.h"
 #include "bar.h"
 #include "blocks.h"
+#include "block_lua.h"
+#include "lua.h"
 
-void trap(int unused) {}
+static void trap(int unused) {}
+
+static bool apply_config(bar_t *bar, lua_State *L) {
+    char *config_path = config_get_path();
+
+    if (!config_path)
+        return false;
+
+    if (luaL_dofile(L, config_path) != LUA_OK) {
+        fprintf(stderr, "luaL_dofile() failed: %s\n", lua_tostring(L, -1));
+        return false;
+    }
+
+    lua_getglobal(L, "config");
+
+    if (!lua_istable(L, -1)) {
+        fprintf(stderr, "%s: config is not defined\n", config_path);
+        return false;
+    }
+
+    lua_getfield(L, -1, "blocks");
+
+    if (!lua_istable(L, -1)) {
+        fprintf(stderr, "%s: config.blocks is not defined\n", config_path);
+        return false;
+    }
+
+    for (int idx = 1;; idx++) {
+        lua_rawgeti(L, -idx, idx);
+
+        if (lua_isnil(L, -1))
+            break;
+
+        const char *name = lua_tostring(L, -1);
+
+        if (name == NULL || name[0] == '\0')
+            continue;
+
+        const struct block *block = blocks_find_native(name);
+
+        if (block) {
+            bar_add(bar, block);
+        }
+        else {
+            struct block_lua_privdata *priv = malloc(sizeof(struct block_lua_privdata));
+
+            if (!priv)
+                return false;
+
+            priv->lua = L;
+            priv->file_path = config_get_block_path(name);
+            priv->block_name = strdup(name);
+            priv->fn_init_idx = 0;
+            priv->fn_update_idx = 0;
+            priv->fn_close_idx = 0;
+
+            bar_add_privdata(bar, &block_lua, priv);
+        }
+    }
+
+    return true;
+}
 
 int main() {
     setlocale(LC_ALL, "en_US.UTF-8");
@@ -17,20 +87,25 @@ int main() {
 
     sigaction(SIGUSR1, &act, NULL);
 
+    lua_State *L = luaL_newstate();
+
+    if (!L)
+        return -1;
+
+    luaL_openlibs(L);
+
     bar_t bar;
 
     bar_init(&bar);
 
-    bar_add(&bar, block_battery);
-    bar_add(&bar, block_volume);
-    bar_add(&bar, block_memory);
-    bar_add(&bar, block_cpu);
-    bar_add(&bar, block_time);
+    apply_config(&bar, L);
+
+    bar_init_blocks(&bar);
 
     while (true) {
         bar_update(&bar);
         bar_wait(&bar);
     }
 
-    return 0;
+    lua_close(L);
 }

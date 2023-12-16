@@ -10,65 +10,67 @@
 #define JITTER_TIME_USECS     50000
 #define NSECS_IN_USEC         1000
 
-static bool update_block(block_t *block) {
-    return block->funcs.update(block->opaque);
-}
-
 static bool reinit_block(block_t *block) {
-    if (block->funcs.close && !block->funcs.close(block->opaque))
+    if (block->funcs->close && !block->funcs->close(block->opaque))
         return false;
 
-    if (block->funcs.probe && !block->funcs.probe())
+    if (block->funcs->probe && !block->funcs->probe())
         return false;
 
-    if (!block->funcs.init)
+    if (!block->funcs->init)
         return true;
 
-    return block->funcs.init(&block->opaque);
-}
-
-static bool init_block(block_t *block) {
-    if (!block->funcs.init)
-        return true;
-
-    if (!block->funcs.init(&block->opaque)) {
-        fprintf(stderr, "failed to initialize block .... \n");
-        return false;
-    }
-
-    return true;
+    return block->funcs->init(&block->opaque);
 }
 
 void bar_init(bar_t *bar) {
     bar->num_blocks = 0;
 }
 
-// TODO: make struct block a pointer
-void bar_add(bar_t *bar, const struct block block) {
-    if (block.probe && !block.probe())
-        return;
+bool bar_add(bar_t *bar, const struct block *block) {
+    return bar_add_privdata(bar, block, NULL);
+}
 
-    if (bar->num_blocks >= MAX_BLOCKS) {// TODO: error out
+bool bar_add_privdata(bar_t *bar, const struct block *block, void *privdata) {
+    if (block->probe && !block->probe())
+        return false;
+
+    if (bar->num_blocks >= MAX_BLOCKS) {
         fprintf(stderr, "max block number exceeded.\n");
-        return;
+        return false;
     }
 
     block_t *bar_block = &bar->blocks[bar->num_blocks++];
 
     bar_block->funcs = block;
+    bar_block->opaque = privdata;
 
-    if (!init_block(bar_block)) {
-        exit(1);
+    return true;
+}
+
+bool bar_init_blocks(bar_t *bar) {
+    for (size_t i = 0; i < bar->num_blocks; i++) {
+        block_t *block = &bar->blocks[i];
+
+        if (!block->funcs->init)
+            continue;
+
+        if (!block->funcs->init(&block->opaque)) {
+            fprintf(stderr, "failed to initialize block %s\n", block->funcs->name);
+            return false;
+        }
     }
+
+    return true;
 }
 
 void bar_update(bar_t *bar) {
     for (size_t i = 0; i < bar->num_blocks; i++) {
         block_t *block = &bar->blocks[i];
 
-        if (!update_block(block)) {
+        if (!block->funcs->update(block->opaque)) {
             if (!reinit_block(block)) {
-                fprintf(stderr, "failed to reinit block!\n");
+                fprintf(stderr, "failed to reinit block %s\n", block->funcs->name);
             }
 
             continue;

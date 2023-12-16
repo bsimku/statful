@@ -12,7 +12,7 @@ struct block {
 };
 
 typedef struct {
-    struct block funcs;
+    const struct block *funcs;
     void *opaque;
 } block_t;
 
