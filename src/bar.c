@@ -93,3 +93,13 @@ void bar_wait(bar_t *bar) {
     usleep(UPDATE_INTERVAL_USECS - cur_time.tv_nsec / NSECS_IN_USEC %
            UPDATE_INTERVAL_USECS + JITTER_TIME_USECS);
 }
+
+void bar_close(bar_t *bar) {
+    for (size_t i = 0; i < bar->num_blocks; i++) {
+        block_t *block = &bar->blocks[i];
+
+        if (block->funcs->close) {
+            block->funcs->close(block->opaque);
+        }
+    }
+}
