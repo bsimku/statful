@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#define CONFIG_DIR_NAME "/statbar"
+#define CONFIG_DIR_NAME "/statful"
 #define CONFIG_BLOCKS_SUBDIR "/blocks"
 #define CONFIG_FILE_NAME "/config.lua"
 

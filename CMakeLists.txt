@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(statbar LANGUAGES C)
+project(statful LANGUAGES C)
 
 find_package(PkgConfig REQUIRED)
 
