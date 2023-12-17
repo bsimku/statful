@@ -21,6 +21,23 @@ static void trap(int signo) {
     g_signo = signo;
 }
 
+static int array_size_lua(lua_State *L) {
+    int idx = 1;
+
+    while (true) {
+        lua_rawgeti(L, -idx, idx);
+
+        if (lua_isnil(L, -1))
+            break;
+
+        idx++;
+    }
+
+    lua_settop(L, -idx - 1);
+
+    return idx - 1;
+}
+
 static bool apply_config(bar_t *bar, lua_State *L) {
     char *config_path = config_get_path();
 
@@ -46,7 +63,12 @@ static bool apply_config(bar_t *bar, lua_State *L) {
         return false;
     }
 
-    for (int idx = 1;; idx++) {
+    const int num_blocks = array_size_lua(L);
+
+    if (!bar_init(bar, num_blocks))
+        return false;
+
+    for (int idx = 1; idx <= num_blocks; idx++) {
         lua_rawgeti(L, -idx, idx);
 
         if (lua_isnil(L, -1))
@@ -91,8 +113,6 @@ static bool run_bar() {
     luaL_openlibs(L);
 
     bar_t bar;
-    bar_init(&bar);
-
 
     if (!apply_config(&bar, L))
         return false;

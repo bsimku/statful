@@ -25,8 +25,16 @@ static bool reinit_block(block_t *block) {
     return block->funcs->init(&block->opaque);
 }
 
-void bar_init(bar_t *bar) {
+bool bar_init(bar_t *bar, size_t max_blocks) {
+    bar->blocks_size = max_blocks;
+    bar->blocks = calloc(sizeof(block_t), max_blocks);
+
+    if (!bar->blocks)
+        return false;
+
     bar->num_blocks = 0;
+
+    return true;
 }
 
 bool bar_add(bar_t *bar, const struct block *block) {
@@ -37,8 +45,8 @@ bool bar_add_privdata(bar_t *bar, const struct block *block, void *privdata) {
     if (block->probe && !block->probe())
         return false;
 
-    if (bar->num_blocks >= MAX_BLOCKS) {
-        fprintf(stderr, "max block number exceeded.\n");
+    if (bar->num_blocks >= bar->blocks_size) {
+        fprintf(stderr, "maximum block number exceeded.\n");
         return false;
     }
 
@@ -104,4 +112,6 @@ void bar_close(bar_t *bar) {
             block->funcs->close(block->opaque);
         }
     }
+
+    free(bar->blocks);
 }

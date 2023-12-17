@@ -5,14 +5,13 @@
 
 #include "block.h"
 
-#define MAX_BLOCKS 5
-
 typedef struct {
-    block_t blocks[MAX_BLOCKS];
+    block_t *blocks;
+    size_t blocks_size;
     size_t num_blocks;
 } bar_t;
 
-void bar_init(bar_t *bar);
+bool bar_init(bar_t *bar, size_t max_blocks);
 bool bar_add(bar_t *bar, const struct block *block);
 bool bar_add_privdata(bar_t *bar, const struct block *block, void *privdata);
 bool bar_init_blocks(bar_t *bar);
