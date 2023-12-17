@@ -15,7 +15,11 @@
 #include "block_lua.h"
 #include "lua.h"
 
-static void trap(int unused) {}
+int g_signo;
+
+static void trap(int signo) {
+    g_signo = signo;
+}
 
 static bool apply_config(bar_t *bar, lua_State *L) {
     char *config_path = config_get_path();
@@ -78,6 +82,37 @@ static bool apply_config(bar_t *bar, lua_State *L) {
     return true;
 }
 
+static bool run_bar() {
+    lua_State *L = luaL_newstate();
+
+    if (!L)
+        return false;
+
+    luaL_openlibs(L);
+
+    bar_t bar;
+    bar_init(&bar);
+
+
+    if (!apply_config(&bar, L))
+        return false;
+
+    bar_init_blocks(&bar);
+
+    while (true) {
+        bar_update(&bar);
+        bar_wait(&bar);
+
+        if (g_signo == SIGHUP)
+            break;
+    }
+
+    bar_close(&bar);
+    lua_close(L);
+
+    return true;
+}
+
 int main() {
     setlocale(LC_ALL, "en_US.UTF-8");
 
@@ -86,26 +121,13 @@ int main() {
     };
 
     sigaction(SIGUSR1, &act, NULL);
-
-    lua_State *L = luaL_newstate();
-
-    if (!L)
-        return -1;
-
-    luaL_openlibs(L);
-
-    bar_t bar;
-
-    bar_init(&bar);
-
-    apply_config(&bar, L);
-
-    bar_init_blocks(&bar);
+    sigaction(SIGHUP, &act, NULL);
 
     while (true) {
-        bar_update(&bar);
-        bar_wait(&bar);
-    }
+        g_signo = 0;
 
-    lua_close(L);
+        if (!run_bar()) {
+            pause();
+        }
+    }
 }
