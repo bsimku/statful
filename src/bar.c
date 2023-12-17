@@ -14,6 +14,8 @@ static bool reinit_block(block_t *block) {
     if (block->funcs->close && !block->funcs->close(block->opaque))
         return false;
 
+    block->opaque = NULL;
+
     if (block->funcs->probe && !block->funcs->probe())
         return false;
 
