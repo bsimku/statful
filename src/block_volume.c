@@ -134,7 +134,6 @@ static bool do_operation(struct block_volume_data *data, enum pulse_operation op
             case READY:
                 op = get_operation(data, operation);
                 data->state = WAITING;
-                break;
             case WAITING:
                 if (pa_operation_get_state(op) == PA_OPERATION_DONE) {
                     data->state = READY;
@@ -192,6 +191,9 @@ static bool block_volume_init(void **opaque) {
 static bool block_volume_update(void *opaque) {
     struct block_volume_data *data = opaque;
 
+    if (data == NULL)
+        return false;
+
     if (data->sink_changed) {
         if (!do_operation(data, OP_GET_DEFAULT_SINK))
             return false;
@@ -214,7 +216,7 @@ static bool block_volume_close(void *ptr) {
     struct block_volume_data *data = ptr;
 
     if (data == NULL)
-        return false;
+        return true;
 
     if (data->ctx) {
         pa_context_disconnect(data->ctx);
