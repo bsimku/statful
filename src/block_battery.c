@@ -143,7 +143,7 @@ static enum battery_status get_battery_status(const char *status_fn) {
     char contents[MAX_FILE_SIZE];
 
     if (!read_file(status_fn, contents))
-        return -1;
+        return UNKNOWN;
 
     if (strcmp(contents, "Not charging") == 0)
         return NOT_CHARGING;
