@@ -28,7 +28,7 @@ static bool read_file(const char *fn, char buf[MAX_FILE_SIZE]) {
     FILE *file = fopen(fn, "r");
 
     if (file == NULL) {
-        fprintf(stderr, "failed to open '%s': %s", fn, strerror(errno));
+        fprintf(stderr, "failed to open '%s': %s\n", fn, strerror(errno));
         return false;
     }
 
@@ -37,7 +37,7 @@ static bool read_file(const char *fn, char buf[MAX_FILE_SIZE]) {
     fclose(file);
 
     if (size <= 1) {
-        fprintf(stderr, "failed to read '%s': %s", fn, strerror(errno));
+        fprintf(stderr, "failed to read '%s': %s\n", fn, strerror(errno));
         return false;
     }
 
