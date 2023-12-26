@@ -163,6 +163,7 @@ void bar_update(bar_t *bar) {
     append(out, out_end, '\0');
 
     puts(output);
+    fflush(stdout);
 }
 
 void bar_wait(bar_t *bar) {
