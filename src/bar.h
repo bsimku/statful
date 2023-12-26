@@ -12,8 +12,8 @@ typedef struct {
 } bar_t;
 
 bool bar_init(bar_t *bar, size_t max_blocks);
-bool bar_add(bar_t *bar, const struct block *block);
-bool bar_add_privdata(bar_t *bar, const struct block *block, void *privdata);
+bool bar_add(bar_t *bar, const struct block *block, const char *fmt);
+bool bar_add_privdata(bar_t *bar, const struct block *block, const char *fmt, void *privdata);
 bool bar_init_blocks(bar_t *bar);
 void bar_update(bar_t *bar);
 void bar_wait(bar_t *bar);

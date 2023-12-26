@@ -74,15 +74,25 @@ static bool apply_config(bar_t *bar, lua_State *L) {
         if (lua_isnil(L, -1))
             break;
 
-        const char *name = lua_tostring(L, -1);
+        lua_getfield(L, -1, "name");
+        lua_getfield(L, -2, "format");
+
+        const char *name = lua_tostring(L, -2);
 
         if (name == NULL || name[0] == '\0')
             continue;
 
+        const char *format = lua_tostring(L, -1);
+
+        if (format == NULL || format[0] == '\0')
+            continue;
+
+        lua_pop(L, 2);
+
         const struct block *block = blocks_find_native(name);
 
         if (block) {
-            bar_add(bar, block);
+            bar_add(bar, block, format);
         }
         else {
             struct block_lua_privdata *priv = malloc(sizeof(struct block_lua_privdata));
@@ -97,7 +107,7 @@ static bool apply_config(bar_t *bar, lua_State *L) {
             priv->fn_update_idx = 0;
             priv->fn_close_idx = 0;
 
-            bar_add_privdata(bar, &block_lua, priv);
+            bar_add_privdata(bar, &block_lua, format, priv);
         }
     }
 

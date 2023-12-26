@@ -3,8 +3,9 @@
 #include <bits/time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 #define UPDATE_INTERVAL_USECS 1000000
 #define JITTER_TIME_USECS     50000
@@ -37,11 +38,11 @@ bool bar_init(bar_t *bar, size_t max_blocks) {
     return true;
 }
 
-bool bar_add(bar_t *bar, const struct block *block) {
-    return bar_add_privdata(bar, block, NULL);
+bool bar_add(bar_t *bar, const struct block *block, const char *fmt) {
+    return bar_add_privdata(bar, block, fmt, NULL);
 }
 
-bool bar_add_privdata(bar_t *bar, const struct block *block, void *privdata) {
+bool bar_add_privdata(bar_t *bar, const struct block *block, const char *fmt, void *privdata) {
     if (block->probe && !block->probe())
         return false;
 
@@ -53,6 +54,7 @@ bool bar_add_privdata(bar_t *bar, const struct block *block, void *privdata) {
     block_t *bar_block = &bar->blocks[bar->num_blocks++];
 
     bar_block->funcs = block;
+    bar_block->format = strdup(fmt);
     bar_block->opaque = privdata;
 
     return true;
