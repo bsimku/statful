@@ -13,6 +13,7 @@ struct block {
 
 typedef struct {
     const struct block *funcs;
+    char *format;
     void *opaque;
 } block_t;
 
