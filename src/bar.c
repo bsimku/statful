@@ -76,7 +76,71 @@ bool bar_init_blocks(bar_t *bar) {
     return true;
 }
 
+static char *append(char *str, char *str_end, char c) {
+    if (str < str_end) {
+        *str++ = c;
+    }
+
+    return str;
+}
+
+static char *append_str(char *str, char *str_end, char *c) {
+    const size_t len = strnlen(c, str_end - str);
+
+    memcpy(str, c, len);
+    str += len;
+
+    return str;
+}
+
+static char *parse_format(block_t *block, char *out, char *out_end, size_t output_size) {
+    enum parse_state {
+        none,
+        variable,
+        format
+    } state = none;
+
+    char *var_name;
+    char *fmt;
+
+    char *c = block->format;
+
+    while (*c) {
+        if (*c == '{') {
+            state = variable;
+            var_name = c + 1;
+        }
+        else if (*c == ':' && state == variable) {
+            state = format;
+            *c = '\0';
+            fmt = c + 1;
+        }
+        else if (*c == '}' && state == format) {
+            state = none;
+            *c = '\0';
+
+            out = block->funcs->get_var(block->opaque, var_name, fmt, out, output_size);
+
+            *c = '}';
+            *(fmt - 1) = ':';
+        }
+        else if (state == none) {
+            out = append(out, out_end, *c);
+        }
+
+        c++;
+    }
+
+    return out;
+}
+
 void bar_update(bar_t *bar) {
+    const size_t output_size = 256;
+    char output[output_size];
+
+    char *out = output;
+    char *out_end = output + output_size;
+
     for (size_t i = 0; i < bar->num_blocks; i++) {
         block_t *block = &bar->blocks[i];
 
@@ -88,14 +152,17 @@ void bar_update(bar_t *bar) {
             continue;
         }
 
+        out = parse_format(block, out, out_end, output_size);
+
         if (i + 1 < bar->num_blocks) {
-            printf(" | ");
+            out = append_str(out, out_end, " | ");
         }
     }
 
-    printf("\n");
+    append(out, out_end, '\n');
+    append(out, out_end, '\0');
 
-    fflush(stdout);
+    puts(output);
 }
 
 void bar_wait(bar_t *bar) {
