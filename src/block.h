@@ -2,6 +2,7 @@
 #define BLOCK_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 struct block {
     const char *name;
@@ -9,6 +10,7 @@ struct block {
     bool (*init)(void **);
     bool (*close)(void *);
     bool (*update)(void *);
+    char *(*get_var)(void *, const char *, const char *, char *, size_t);
 };
 
 typedef struct {
