@@ -8,6 +8,7 @@
 #include <dirent.h>
 
 #include "alloc.h"
+#include "block_common.h"
 
 #define PROC_POWER_SUPPLIES_DIR "/sys/class/power_supply"
 #define MAX_FILE_SIZE 32
@@ -98,9 +99,20 @@ static bool block_battery_probe() {
     return true;
 }
 
+enum battery_status {
+    UNKNOWN,
+    NOT_CHARGING,
+    CHARGING,
+    DISCHARGING,
+    FULL
+};
+
 struct block_battery_data {
     char *status_path;
     char *capacity_path;
+    enum battery_status status;
+    int capacity;
+    const char *symbol;
 };
 
 static bool block_battery_init(void **ptr) {
@@ -130,14 +142,6 @@ static int get_battery_capacity(const char *capacity_fn) {
 
     return strtol(contents, NULL, 10);
 }
-
-enum battery_status {
-    UNKNOWN,
-    NOT_CHARGING,
-    CHARGING,
-    DISCHARGING,
-    FULL
-};
 
 static enum battery_status get_battery_status(const char *status_fn) {
     char contents[MAX_FILE_SIZE];
@@ -176,24 +180,49 @@ static const char *get_status_symbol(const enum battery_status status, const int
 }
 
 static bool block_battery_update(void *ptr) {
-    const struct block_battery_data *data = ptr;
+    struct block_battery_data *data = ptr;
 
     if (data == NULL)
         return false;
 
-    const enum battery_status status = get_battery_status(data->status_path);
-
-    if (status == UNKNOWN)
-        return false;
-
-    const int capacity = get_battery_capacity(data->capacity_path);
-
-    if (capacity == -1)
-        return false;
-
-    printf("%s %u%%", get_status_symbol(status, capacity), capacity);
+    data->status = UNKNOWN;
+    data->symbol = NULL;
+    data->capacity = -1;
 
     return true;
+}
+
+static int get_var_capacity(struct block_battery_data *data) {
+    if (data->capacity == -1) {
+        data->capacity = get_battery_capacity(data->capacity_path);
+    }
+
+    return data->capacity;
+}
+
+static const char *get_var_symbol(struct block_battery_data *data) {
+    if (data->status == UNKNOWN) {
+        data->status = get_battery_status(data->status_path);
+    }
+
+    if (data->symbol == NULL) {
+        data->symbol = get_status_symbol(data->status, get_var_capacity(data));
+    }
+
+    return data->symbol;
+}
+
+
+static char *block_battery_get_var(void *ptr, const char *name, const char *fmt, char *output, size_t size) {
+    struct block_battery_data *data = ptr;
+
+    if (data == NULL)
+        return NULL;
+
+    BLOCK_PARAM("sym", fmt, get_var_symbol(data));
+    BLOCK_PARAM("capacity", fmt, get_var_capacity(data));
+
+    return output;
 }
 
 static bool block_battery_close(void *ptr) {
@@ -218,5 +247,6 @@ const struct block block_battery = {
     .probe = block_battery_probe,
     .init = block_battery_init,
     .update = block_battery_update,
+    .get_var = block_battery_get_var,
     .close = block_battery_close
 };

@@ -11,6 +11,7 @@
 #include <pulse/mainloop.h>
 
 #include "alloc.h"
+#include "block_common.h"
 
 struct block_volume_data {
     pa_mainloop *ml;
@@ -194,6 +195,12 @@ static bool block_volume_update(void *opaque) {
     if (data == NULL)
         return false;
 
+    data->volume = -1;
+
+    return true;
+}
+
+static bool update_volume(struct block_volume_data *data) {
     if (data->sink_changed) {
         if (!do_operation(data, OP_GET_DEFAULT_SINK))
             return false;
@@ -204,12 +211,26 @@ static bool block_volume_update(void *opaque) {
     if (!do_operation(data, OP_GET_SINK_VOLUME))
         return false;
 
-    printf(" %d%%", data->volume);
+    return true;
+}
+
+static int get_var_volume(struct block_volume_data *data) {
+    if (data->volume == -1) {
+        update_volume(data);
+    }
+
+    return data->volume;
+}
+
+static char *block_volume_get_var(void *ptr, const char *name, const char *fmt, char *output, size_t size) {
+    struct block_volume_data *data = ptr;
 
     if (data == NULL)
-        return false;
+        return NULL;
 
-    return true;
+    BLOCK_PARAM("vol", fmt, get_var_volume(data));
+
+    return output;
 }
 
 static bool block_volume_close(void *ptr) {
@@ -237,5 +258,6 @@ const struct block block_volume = {
     .probe = block_volume_probe,
     .init = block_volume_init,
     .update = block_volume_update,
+    .get_var = block_volume_get_var,
     .close = block_volume_close
 };

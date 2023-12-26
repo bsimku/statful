@@ -52,7 +52,13 @@ static bool block_lua_init(void **ptr) {
         if ((priv->fn_update_idx = get_lua_func_idx(priv, "update")) == -1)
             return false;
 
+        if ((priv->fn_get_var_idx = get_lua_func_idx(priv, "get_var")) == -1)
+            return false;
+
         if ((priv->fn_close_idx = get_lua_func_idx(priv, "close")) == -1)
+            return false;
+
+        if ((priv->table_idx = luaL_ref(priv->lua, LUA_REGISTRYINDEX)) == -1)
             return false;
     }
 
@@ -78,6 +84,32 @@ static bool block_lua_update(void *ptr) {
         return false;
 
     return true;
+}
+
+static char *block_lua_get_var(void *ptr, const char *name, const char *fmt, char *output, size_t size) {
+    struct block_lua_privdata *priv = ptr;
+
+    lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->fn_get_var_idx);
+    lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->table_idx);
+    lua_pushstring(priv->lua, name);
+    lua_pcall(priv->lua, 2, 1, 0);
+
+    if (lua_isnumber(priv->lua, -1)) {
+        const int sz = snprintf(output, size, fmt, lua_tonumber(priv->lua, -1));
+
+        if (sz < size) {
+            output += sz;
+        }
+    }
+    else if (lua_isstring(priv->lua, -1)) {
+        const int sz = snprintf(output, size, fmt, lua_tostring(priv->lua, -1));
+
+        if (sz < size) {
+            output += sz;
+        }
+    }
+
+    return output;
 }
 
 static bool block_lua_close(void *ptr) {
@@ -107,5 +139,6 @@ const struct block block_lua = {
     .probe = NULL,
     .init = block_lua_init,
     .update = block_lua_update,
+    .get_var = block_lua_get_var,
     .close = block_lua_close
 };

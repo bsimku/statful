@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "alloc.h"
+#include "block_common.h"
 
 #define PROC_STAT_FN "/proc/stat"
 
@@ -13,6 +14,7 @@ struct block_cpu_data {
     FILE *f_stat;
     unsigned long active;
     unsigned long total;
+    int cpu_used;
 };
 
 static bool block_cpu_init(void **opaque) {
@@ -39,6 +41,12 @@ static bool block_cpu_update(void *opaque) {
     if (data == NULL)
         return false;
 
+    data->cpu_used = -1;
+
+    return true;
+}
+
+static int get_cpu_used(struct block_cpu_data *data) {
     char cpu[4];
     unsigned int user, nice, system, idle, iowait, irq, softirq, steal, guest, guest_nice;
 
@@ -61,11 +69,26 @@ static bool block_cpu_update(void *opaque) {
     if (total_diff == 0)
         return false;
 
-    const unsigned int percent_used = active_diff * 100 / total_diff;
+    return active_diff * 100 / total_diff;
+}
 
-    printf(" %u%%", percent_used);
+static int get_var_cpu_used(struct block_cpu_data *data) {
+    if (data->cpu_used == -1) {
+        data->cpu_used = get_cpu_used(data);
+    }
 
-    return true;
+    return data->cpu_used;
+}
+
+static char *block_cpu_get_var(void *ptr, const char *name, const char *fmt, char *output, size_t size) {
+    struct block_cpu_data *data = ptr;
+
+    if (data == NULL)
+        return NULL;
+
+    BLOCK_PARAM("cpu_used", fmt, get_var_cpu_used(data));
+
+    return output;
 }
 
 static bool block_cpu_close(void *opaque) {
@@ -89,5 +112,6 @@ const struct block block_cpu = {
     .probe = NULL,
     .init = block_cpu_init,
     .update = block_cpu_update,
+    .get_var = block_cpu_get_var,
     .close = block_cpu_close
 };
