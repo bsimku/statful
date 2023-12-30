@@ -78,7 +78,8 @@ static bool block_lua_update(void *ptr) {
         return false;
 
     lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->fn_update_idx);
-    lua_pcall(priv->lua, 0, 1, 0);
+    lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->table_idx);
+    lua_pcall(priv->lua, 1, 1, 0);
 
     if (!lua_toboolean(priv->lua, -1))
         return false;
