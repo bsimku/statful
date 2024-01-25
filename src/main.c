@@ -46,27 +46,27 @@ static bool apply_config(bar_t *bar, lua_State *L) {
 
     if (luaL_dofile(L, config_path) != LUA_OK) {
         fprintf(stderr, "luaL_dofile() failed: %s\n", lua_tostring(L, -1));
-        return false;
+        goto fail;
     }
 
     lua_getglobal(L, "config");
 
     if (!lua_istable(L, -1)) {
         fprintf(stderr, "%s: config is not defined\n", config_path);
-        return false;
+        goto fail;
     }
 
     lua_getfield(L, -1, "blocks");
 
     if (!lua_istable(L, -1)) {
         fprintf(stderr, "%s: config.blocks is not defined\n", config_path);
-        return false;
+        goto fail;
     }
 
     const int num_blocks = array_size_lua(L);
 
     if (!bar_init(bar, num_blocks))
-        return false;
+        goto fail;
 
     for (int idx = 1; idx <= num_blocks; idx++) {
         lua_rawgeti(L, -idx, idx);
@@ -98,7 +98,7 @@ static bool apply_config(bar_t *bar, lua_State *L) {
             struct block_lua_privdata *priv = malloc(sizeof(struct block_lua_privdata));
 
             if (!priv)
-                return false;
+                goto fail;
 
             priv->lua = L;
             priv->file_path = config_get_block_path(name);
@@ -111,7 +111,16 @@ static bool apply_config(bar_t *bar, lua_State *L) {
         }
     }
 
-    return true;
+    bool ret = true;
+
+cleanup:
+    free(config_path);
+
+    return ret;
+
+fail:
+    ret = false;
+    goto cleanup;
 }
 
 static bool run_bar() {
