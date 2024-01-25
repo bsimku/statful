@@ -63,7 +63,8 @@ static bool block_lua_init(void **ptr) {
     }
 
     lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->fn_init_idx);
-    lua_pcall(priv->lua, 0, 1, 0);
+    lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->table_idx);
+    lua_pcall(priv->lua, 1, 1, 0);
 
     if (!lua_toboolean(priv->lua, -1))
         return false;
@@ -120,7 +121,8 @@ static bool block_lua_close(void *ptr) {
         return false;
 
     lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->fn_close_idx);
-    lua_pcall(priv->lua, 0, 1, 0);
+    lua_rawgeti(priv->lua, LUA_REGISTRYINDEX, priv->table_idx);
+    lua_pcall(priv->lua, 1, 1, 0);
 
     free(priv->file_path);
     free(priv->block_name);
