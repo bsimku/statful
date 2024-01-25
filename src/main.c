@@ -142,7 +142,7 @@ static bool run_bar() {
         bar_update(&bar);
         bar_wait(&bar);
 
-        if (g_signo == SIGHUP)
+        if (g_signo == SIGHUP || g_signo == SIGTERM)
             break;
     }
 
@@ -161,6 +161,7 @@ int main() {
 
     sigaction(SIGUSR1, &act, NULL);
     sigaction(SIGHUP, &act, NULL);
+    sigaction(SIGTERM, &act, NULL);
 
     while (true) {
         g_signo = 0;
@@ -168,5 +169,8 @@ int main() {
         if (!run_bar()) {
             pause();
         }
+
+        if (g_signo == SIGTERM)
+            break;
     }
 }
