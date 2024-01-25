@@ -181,6 +181,8 @@ void bar_close(bar_t *bar) {
         if (block->funcs->close) {
             block->funcs->close(block->opaque);
         }
+
+        free(block->format);
     }
 
     free(bar->blocks);
