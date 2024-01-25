@@ -127,10 +127,10 @@ static bool block_lua_close(void *ptr) {
 
     lua_State *lua = priv->lua;
 
+    free(priv);
+
     if (!lua_toboolean(lua, -1))
         return false;
-
-    free(priv);
 
     return true;
 }
