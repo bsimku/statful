@@ -47,7 +47,7 @@ static bool block_volume_probe() {
     if (ml_api == NULL)
         goto mainloop_fail;
 
-    pa_context *ctx = pa_context_new(ml_api, "test");
+    pa_context *ctx = pa_context_new(ml_api, "statful");
 
     if (ctx == NULL)
         goto context_fail;
@@ -172,7 +172,7 @@ static bool block_volume_init(void **opaque) {
 
     data->ml_api = pa_mainloop_get_api(data->ml);
 
-    if ((data->ctx = pa_context_new(data->ml_api, "test")) == NULL)
+    if ((data->ctx = pa_context_new(data->ml_api, "statful")) == NULL)
         return false;
 
     if (pa_context_connect(data->ctx, NULL, 0, NULL) < 0)
