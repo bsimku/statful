@@ -27,7 +27,7 @@ struct block_volume_data {
 
     bool op_failed;
     bool sink_changed;
-    char sink_name[128];
+    char *sink_name;
     unsigned volume;
 };
 
@@ -92,7 +92,11 @@ static void pa_state_cb(pa_context *ctx, void *userdata) {
 static void pa_server_info_cb(pa_context *c, const pa_server_info *i, void *userdata) {
     struct block_volume_data *data = userdata;
 
-    strncpy(data->sink_name, i->default_sink_name, sizeof(data->sink_name));
+    if (data->sink_name) {
+        free(data->sink_name);
+    }
+
+    data->sink_name = strdup(i->default_sink_name);
 }
 
 static void pa_sink_info_cb(pa_context *c, const pa_sink_info *i, int eol, void *userdata) {
@@ -249,6 +253,10 @@ static bool block_volume_close(void *ptr) {
 
     if (data->ml) {
         pa_mainloop_free(data->ml);
+    }
+
+    if (data->sink_name) {
+        free(data->sink_name);
     }
 
     free(data);
