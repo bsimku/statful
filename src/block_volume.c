@@ -25,6 +25,7 @@ struct block_volume_data {
         WAITING
     } state;
 
+    bool op_failed;
     bool sink_changed;
     char sink_name[128];
     unsigned volume;
@@ -192,7 +193,7 @@ static bool block_volume_init(void **opaque) {
 static bool block_volume_update(void *opaque) {
     struct block_volume_data *data = opaque;
 
-    if (data == NULL)
+    if (data == NULL || data->op_failed)
         return false;
 
     data->volume = -1;
@@ -216,7 +217,9 @@ static bool update_volume(struct block_volume_data *data) {
 
 static int get_var_volume(struct block_volume_data *data) {
     if (data->volume == -1) {
-        update_volume(data);
+        if (!update_volume(data)) {
+            data->op_failed = true;
+        }
     }
 
     return data->volume;
