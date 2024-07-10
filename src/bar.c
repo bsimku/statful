@@ -69,7 +69,6 @@ bool bar_init_blocks(bar_t *bar) {
 
         if (!block->funcs->init(&block->opaque)) {
             fprintf(stderr, "failed to initialize block %s\n", block->funcs->name);
-            return false;
         }
     }
 
