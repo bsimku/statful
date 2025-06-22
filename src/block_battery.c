@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 #include <dirent.h>
 
 #include "alloc.h"
@@ -13,6 +14,7 @@
 #define PROC_POWER_SUPPLIES_DIR "/sys/class/power_supply"
 #define MAX_FILE_SIZE 32
 #define MICROWATTS_IN_WATT 1000000
+#define MICRO_UNIT 1000000
 
 static char *make_path(const char *dir1, const char *dir2, const char *name) {
     char *path = alloc_zero(strlen(dir1) + strlen(dir2) + strlen(name) + 3);
@@ -112,6 +114,8 @@ struct block_battery_data {
     char *status_path;
     char *capacity_path;
     char *power_path;
+    char *current_path;
+    char *voltage_path;
     enum battery_status status;
     int capacity;
     float power;
@@ -127,11 +131,20 @@ static bool block_battery_init(void **ptr) {
     if (path == NULL)
         return false;
 
-    struct block_battery_data *data = alloc(sizeof(struct block_battery_data));
+    struct block_battery_data *data = alloc_zero(sizeof(struct block_battery_data));
 
     data->status_path = make_path(PROC_POWER_SUPPLIES_DIR, path, "status");
     data->capacity_path = make_path(PROC_POWER_SUPPLIES_DIR, path, "capacity");
     data->power_path = make_path(PROC_POWER_SUPPLIES_DIR, path, "power_now");
+
+    if (access(data->power_path, F_OK) != 0) {
+        free(data->power_path);
+
+        data->power_path = NULL;
+
+        data->current_path = make_path(PROC_POWER_SUPPLIES_DIR, path, "current_now");
+        data->voltage_path = make_path(PROC_POWER_SUPPLIES_DIR, path, "voltage_now");
+    }
 
     *ptr = data;
 
@@ -178,6 +191,24 @@ static float get_battery_power(const char *power_fn) {
     return strtof(contents, NULL) / MICROWATTS_IN_WATT;
 }
 
+static float get_battery_power_fallback(struct block_battery_data *data) {
+    char contents[MAX_FILE_SIZE];
+
+    int voltage = 0, current = 0;
+
+    if (!read_file(data->voltage_path, contents))
+        return -1;
+
+    voltage = atoi(contents);
+
+    if (!read_file(data->current_path, contents))
+        return -1;
+
+    current = atoi(contents);
+
+    return (float)voltage / MICRO_UNIT * (float)current / MICRO_UNIT;
+}
+
 static const char *get_status_symbol(const enum battery_status status, const int capacity) {
     if (status == CHARGING)
         return "";
@@ -217,7 +248,12 @@ static int get_var_capacity(struct block_battery_data *data) {
 
 static float get_var_power(struct block_battery_data *data) {
     if (data->power == -1) {
-        data->power = get_battery_power(data->power_path);
+        if (data->power_path) {
+            data->power = get_battery_power(data->power_path);
+        }
+        else {
+            data->power = get_battery_power_fallback(data);
+        }
     }
 
     return data->power;
@@ -259,6 +295,15 @@ static bool block_battery_close(void *ptr) {
 
     if (data->status_path)
         free(data->status_path);
+
+    if (data->power_path)
+        free(data->power_path);
+
+    if (data->current_path)
+        free(data->current_path);
+
+    if (data->voltage_path)
+        free(data->voltage_path);
 
     free(data);
 
